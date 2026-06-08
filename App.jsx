@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import logo from './IMG_4167.JPG'
-import oyatilloImage from './IMG_4405.jpeg'
+import oyatilloImage from './oyatillo_new.jpg'
 import nurislomImage from './IMG_5404.JPG'
 import UniversitiesSection from './UniversitiesSection.jsx'
 import universitiesData from './universities.js'
