@@ -7,11 +7,12 @@ const universitiesData = [
     country: "USA",
     tuition: "$25,000–$35,000 / year",
     scholarship: "Up to $32,000 / year",
-    ielts: "Not Required",
+    ielts: "Duolingo 65+ or English Placement Test",
     intakes: "September, January",
     programs: ["Business Administration", "Computer Science", "Biology", "Psychology", "Nursing"],
     tag: "Affordable",
-    website: "https://www.hartwick.edu"
+    website: "https://www.hartwick.edu",
+    details: "Hartwick College is a private liberal arts college in upstate New York offering a personalized education with small class sizes averaging 13 students. The college is known for its generous merit scholarships that make a US education very affordable for international students. Hartwick accepts Duolingo or an on-campus English Placement Test instead of IELTS/TOEFL, making the application process easier for Uzbek students."
   },
   {
     name: "Pace University",
@@ -23,7 +24,8 @@ const universitiesData = [
     intakes: "September, January",
     programs: ["Finance", "Marketing", "Nursing", "Computer Science", "Law"],
     tag: "NYC",
-    website: "https://www.pace.edu"
+    website: "https://www.pace.edu",
+    details: "Pace University is located in the heart of New York City with campuses in Manhattan and Westchester. It offers strong programs in business, finance, and nursing with direct access to NYC's top employers and internship opportunities. International students benefit from a dedicated Office of International Students and an active global student community."
   },
   {
     name: "Monroe University",
@@ -31,7 +33,7 @@ const universitiesData = [
     country: "USA",
     tuition: "$15,000–$25,000 / year",
     scholarship: "Up to $3,500 / semester",
-    ielts: "Not Required",
+    ielts: "English Placement Test on Campus",
     intakes: "September, January, May",
     programs: ["Business Administration", "Criminal Justice", "Computer Science", "Hospitality", "Healthcare"],
     tag: "Fast Admissions",
