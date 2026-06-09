@@ -13,31 +13,39 @@ function telegramLink(message) {
   return `${TELEGRAM}?text=${encodeURIComponent(message)}`
 }
 
-/* ─── PARALLAX HOOK ─── */
+/* ─── FULL-PAGE PARALLAX HOOK ─── */
+// Any element with data-parallax="0.15" will move at 15% of scroll speed
+// relative to its section's scroll position (not global scroll).
 function useParallax() {
   useEffect(() => {
-    const orb1  = document.getElementById('para-orb1')
-    const orb2  = document.getElementById('para-orb2')
-    const orb3  = document.getElementById('para-orb3')
-    const photo = document.getElementById('para-photo')
-    const heroBg = document.getElementById('para-herobg')
-
     let raf = null
-    let lastY = window.scrollY
 
     function update() {
-      const y = window.scrollY
-      if (Math.abs(y - lastY) < 0.5) { raf = null; return }
-      lastY = y
+      const scrollY = window.scrollY
 
-      // Orbs drift at different rates (slow, creates depth)
-      if (orb1)  orb1.style.transform  = `translateY(${y * 0.18}px)`
-      if (orb2)  orb2.style.transform  = `translateY(${y * 0.12}px)`
-      if (orb3)  orb3.style.transform  = `translateY(${y * 0.22}px)`
-      // Photo lifts slightly slower than scroll
-      if (photo) photo.style.transform = `translateY(${y * 0.08}px)`
-      // Hero gradient bg shifts very slowly
-      if (heroBg) heroBg.style.transform = `translateY(${y * 0.05}px)`
+      // 1. Hero orbs — global parallax (they only exist in hero)
+      const orb1   = document.getElementById('para-orb1')
+      const orb2   = document.getElementById('para-orb2')
+      const orb3   = document.getElementById('para-orb3')
+      const photo  = document.getElementById('para-photo')
+      const heroBg = document.getElementById('para-herobg')
+      if (orb1)   orb1.style.transform   = `translateY(${scrollY * 0.18}px)`
+      if (orb2)   orb2.style.transform   = `translateY(${scrollY * 0.12}px)`
+      if (orb3)   orb3.style.transform   = `translateY(${scrollY * 0.22}px)`
+      if (photo)  photo.style.transform  = `translateY(${scrollY * 0.07}px)`
+      if (heroBg) heroBg.style.transform = `translateY(${scrollY * 0.04}px)`
+
+      // 2. Section-relative parallax — elements with [data-parallax]
+      const els = document.querySelectorAll('[data-parallax]')
+      els.forEach((el) => {
+        const rate   = parseFloat(el.dataset.parallax) || 0.1
+        const rect   = el.parentElement
+          ? el.parentElement.getBoundingClientRect()
+          : el.getBoundingClientRect()
+        const centerOffset = rect.top + rect.height / 2 - window.innerHeight / 2
+        el.style.transform = `translateY(${centerOffset * rate}px)`
+      })
+
       raf = null
     }
 
@@ -45,6 +53,8 @@ function useParallax() {
       if (!raf) raf = requestAnimationFrame(update)
     }
 
+    // Run once immediately so nothing jumps on first scroll
+    update()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       window.removeEventListener('scroll', onScroll)
@@ -504,10 +514,12 @@ export default function App() {
       </section>
 
       {/* ── COUNTRIES ── */}
-      <section id="about" className="mx-auto max-w-7xl px-6 py-24">
+      <section id="about" className="relative mx-auto max-w-7xl px-6 py-24 overflow-hidden">
+        {/* background glow */}
+        <div data-parallax="0.08" className="pointer-events-none absolute -right-40 top-0 h-[500px] w-[500px] rounded-full bg-blue-700/8 blur-[100px]" />
         <div className="mb-12 text-center">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400 label-animate">Countries</p>
-          <h2 className="reveal text-4xl font-bold">Study In Top Countries</h2>
+          <p data-parallax="-0.06" className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400 label-animate">Countries</p>
+          <h2 data-parallax="-0.04" className="reveal text-4xl font-bold">Study In Top Countries</h2>
           <p className="reveal reveal-delay-1 mt-4 text-slate-400">Click any country to see full details and how UPNEX can help you.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -527,11 +539,12 @@ export default function App() {
       </section>
 
       {/* ── ABOUT UPNEX ── */}
-      <section className="bg-slate-900/40 py-24">
+      <section className="relative bg-slate-900/40 py-24 overflow-hidden">
+        <div data-parallax="0.10" className="pointer-events-none absolute -left-60 top-1/2 h-[600px] w-[600px] rounded-full bg-indigo-700/8 blur-[120px]" />
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12 text-center">
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">About Us</p>
-            <h2 className="reveal text-4xl font-bold">Why Upnex Is Different</h2>
+            <p data-parallax="-0.06" className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">About Us</p>
+            <h2 data-parallax="-0.04" className="reveal text-4xl font-bold">Why Upnex Is Different</h2>
           </div>
           <div className="grid gap-6 lg:grid-cols-3 mb-12">
             {[
@@ -590,11 +603,13 @@ export default function App() {
       </section>
 
       {/* ── SERVICES ── */}
-      <section id="services" className="bg-slate-900/60 py-24">
+      <section id="services" className="relative bg-slate-900/60 py-24 overflow-hidden">
+        <div data-parallax="0.08" className="pointer-events-none absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-blue-600/7 blur-[110px]" />
+        <div data-parallax="-0.06" className="pointer-events-none absolute -left-32 top-1/3 h-[350px] w-[350px] rounded-full bg-violet-700/6 blur-[90px]" />
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12 text-center">
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Services</p>
-            <h2 className="reveal text-4xl font-bold">Everything We Handle For You</h2>
+            <p data-parallax="-0.06" className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Services</p>
+            <h2 data-parallax="-0.04" className="reveal text-4xl font-bold">Everything We Handle For You</h2>
             <p className="reveal reveal-delay-1 mt-4 text-slate-400 max-w-xl mx-auto">
               From your first document to the moment you land — Upnex manages every step.
             </p>
@@ -619,15 +634,18 @@ export default function App() {
       </section>
 
       {/* ── TEAM ── */}
-      <section id="team" className="mx-auto max-w-7xl px-6 py-24">
+      <section id="team" className="relative mx-auto max-w-7xl px-6 py-24 overflow-hidden">
+        <div data-parallax="0.09" className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-blue-600/8 blur-[100px]" />
         <div className="mb-14 text-center">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Meet The Team</p>
-          <h2 className="reveal text-4xl font-bold">The People Behind Upnex</h2>
+          <p data-parallax="-0.06" className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Meet The Team</p>
+          <h2 data-parallax="-0.04" className="reveal text-4xl font-bold">The People Behind Upnex</h2>
         </div>
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Oyatillo */}
           <div className="reveal-left overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60">
-            <img src={oyatilloImage} alt="Oyatillo" className="h-[420px] w-full object-cover object-top" />
+            <div data-parallax="-0.07" className="overflow-hidden">
+            <img src={oyatilloImage} alt="Oyatillo" className="h-[420px] w-full object-cover object-top scale-110" />
+            </div>
             <div className="p-8">
               <h3 className="text-3xl font-bold">Oyatillo</h3>
               <p className="mt-2 text-blue-400">Co-Founder • USA Representative • New York</p>
@@ -652,7 +670,9 @@ export default function App() {
 
           {/* Nurislom */}
           <div className="reveal-right overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60">
-            <img src={nurislomImage} alt="Nurislom" className="h-[420px] w-full object-cover object-top" />
+            <div data-parallax="-0.07" className="overflow-hidden">
+            <img src={nurislomImage} alt="Nurislom" className="h-[420px] w-full object-cover object-top scale-110" />
+            </div>
             <div className="p-8">
               <h3 className="text-3xl font-bold">Nurislom</h3>
               <p className="mt-2 text-blue-400">Co-Founder • Uzbekistan Director • Tashkent</p>
@@ -683,8 +703,8 @@ export default function App() {
       {/* ── CONTACT ── */}
       <section id="contact" className="mx-auto max-w-7xl px-6 py-24">
         <div className="mb-12 text-center">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Contact</p>
-          <h2 className="reveal text-4xl font-bold">Get In Touch</h2>
+          <p data-parallax="-0.06" className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">Contact</p>
+          <h2 data-parallax="-0.04" className="reveal text-4xl font-bold">Get In Touch</h2>
           <p className="reveal reveal-delay-1 mt-4 text-slate-400">Ready to start your journey? We're here to help.</p>
         </div>
         <div className="grid gap-6 lg:grid-cols-3">

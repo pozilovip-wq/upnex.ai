@@ -163,7 +163,8 @@ body {
 }
 
 /* ─── PARALLAX ELEMENTS ─── */
-#para-orb1, #para-orb2, #para-orb3, #para-photo, #para-herobg {
+#para-orb1, #para-orb2, #para-orb3, #para-photo, #para-herobg,
+[data-parallax] {
   will-change: transform;
 }
 
