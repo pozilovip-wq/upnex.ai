@@ -161,24 +161,12 @@ function UniModal({ u, onClose }) {
 
 /* ─── UNIVERSITY CARD ─── */
 function UniCard({ u, index, onOpenModal }) {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.05 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+  const stagger = (index % 12) * 0.055
 
   return (
     <div
-      ref={ref}
       style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0px)' : 'translateY(24px)',
-        transition: `opacity 0.45s ease ${(index % 12) * 0.06}s, transform 0.45s ease ${(index % 12) * 0.06}s`
+        animation: `cardSlideUp 0.5s cubic-bezier(0.16,1,0.3,1) ${stagger}s both`
       }}
       className="flex flex-col rounded-3xl border border-slate-800 bg-slate-900 hover:border-blue-500 transition-colors duration-300 cursor-pointer"
       onClick={() => onOpenModal(u)}
