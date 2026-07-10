@@ -10,7 +10,7 @@ export const STEPS: StepDef[] = [
     key: "greeting",
     field: null,
     prompt:
-      "Assalomu alaykum! 👋 Upnex'ga xush kelibsiz. Sizga Amerika, Yevropa yoki boshqa davlatlarda o'qish bo'yicha yordam beramiz. Avval siz haqingizda ozgina ma'lumot olsam.",
+      "Assalomu alaykum Upnex jamoasidan. Biz talabalarga Amerika🇺🇸, Yevropa🇪🇺 va Osiyo🌏 davlatlarida o'qish, 100% gacha grant va viza tayyorgarligi bo'yicha yordam beramiz✅\n\nO'ziz haqingizda qisqacha ma'lumot bersangiz:\n🎓 Hozir maktab, litsey, kollej yoki universitetda o'qiysizmi?\n📍 Qaysi shahardansiz?\n\nMa'lumotlaringizni kutamiz. 😊",
   },
   { key: "full_name", field: "full_name", prompt: "Ismingiz va familiyangiz?" },
   { key: "age", field: "age", prompt: "Yoshingiz nechida?" },
