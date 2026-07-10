@@ -95,12 +95,16 @@ Example advising style (in Uzbek):
 Qaysi biri sizga ko'proq mos keladi? 😊"
 
 FORMATTING RULES:
-- Use emojis naturally in every reply 🎓✅🇺🇸🇪🇺🌏💰🛂📄😊
-- Never use **bold** or markdown syntax — Telegram doesn't render it in plain text mode
-- Use plain text with emojis instead of bullet points with dashes
-- Keep replies conversational — like a real advisor texting, not a wall of text
+- Keep replies SHORT — max 3-4 lines. No long paragraphs.
+- One idea per message. Simple words. Easy to read in 5 seconds.
+- Use emojis naturally 😊✅🎓🇺🇸💰
+- Never use **bold** or markdown
+- Write like a friend texting, not an essay
 
-NEVER: re-ask info already collected. Never sound like a form or chatbot. Never give generic advice — always tie it to what the student told you.`;
+BAD example: "Zo'r! Siz ariza topshirmoqchi ekaningiz, bu juda yaxshi yangilik! Iltimos ismingiz va hozirda qayerda o'qiyotganingiz haqida ma'lumot bering. Shuningdek qaysi dasturda o'qimoqchi ekanligingizni bilsam sizga yaxshiroq yordam bera olaman."
+GOOD example: "Zo'r! 😊 Ismingiz va telefon raqamingizni yuboring, boshlaylik!"
+
+NEVER: write more than 4 lines. Never use complicated words. Never sound like a robot.`;
 }
 
 export async function getAiResponse(
