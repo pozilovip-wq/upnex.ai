@@ -7,7 +7,8 @@ import { notifyHandoff, notifyNewLead, notifyQualified } from "../handoff.js";
 export async function handleMessage(bot: Telegraf, chatId: string, username: string | null, text: string) {
   let lead: Lead = await getOrCreateLead(chatId, username);
 
-  const isNewLead = lead.current_step === "greeting" && lead.conversation_history.length === 0;
+  const isNewLead = lead.conversation_history.length === 0;
+  const isReturning = lead.conversation_history.length > 0 && lead.conversation_history.length <= 2 && text === "/start";
 
   if (isNewLead) {
     await appendMessages(lead, [{ role: "assistant", content: STEPS[0].prompt }]);
@@ -15,6 +16,10 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     await bot.telegram.sendMessage(chatId, STEPS[0].prompt);
     await notifyNewLead(bot, lead);
     return;
+  }
+
+  if (isReturning) {
+    await notifyNewLead(bot, lead);
   }
 
   const ai = await getAiResponse(lead, lead.conversation_history, text);
