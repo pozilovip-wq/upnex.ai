@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { Lead } from "./db.js";
 import { STEPS, stepIndex } from "./steps.js";
 import { UPNEX_KNOWLEDGE } from "./knowledge.js";
+import { searchUniversities } from "./search.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -129,10 +130,21 @@ export async function getAiResponse(
   history: { role: "user" | "assistant"; content: string }[],
   userMessage: string
 ): Promise<AiResult> {
+  // Search web for universities when we know country + program
+  let webResults = "";
+  if (lead.country && lead.program) {
+    webResults = await searchUniversities(lead.country, lead.program, lead.english_level ?? "");
+  }
+
+  const systemPrompt = buildSystemPrompt(lead);
+  const fullPrompt = webResults
+    ? `${systemPrompt}\n\nLIVE WEB SEARCH RESULTS (use these for up-to-date university info):\n${webResults}`
+    : systemPrompt;
+
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: buildSystemPrompt(lead) },
+      { role: "system", content: fullPrompt },
       ...history.slice(-12),
       { role: "user", content: userMessage },
     ],
