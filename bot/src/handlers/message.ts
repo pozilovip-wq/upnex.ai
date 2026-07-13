@@ -29,16 +29,8 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     patch.current_step = nextStep(lead.current_step).key;
   }
 
-  // Minimum required fields before a student can be considered a hot lead
   const updatedLead = { ...lead, ...patch };
-  const hasMinInfo = !!(
-    updatedLead.full_name &&
-    updatedLead.phone &&
-    updatedLead.country &&
-    updatedLead.program
-  );
-
-  const isHotLead = ai.handoff_requested && hasMinInfo;
+  const isHotLead = ai.handoff_requested;
 
   if (isHotLead) {
     patch.status = "handoff";
@@ -60,13 +52,11 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   await bot.telegram.sendMessage(chatId, ai.reply_text);
 
-  if (isHotLead) {
+  if (isHotLead && ai.admin_report) {
+    const ADMIN = process.env.ADMIN_CHAT_ID!;
+    await bot.telegram.sendMessage(ADMIN, ai.admin_report);
+  } else if (isHotLead) {
     await notifyHandoff(bot, lead);
-  } else if (ai.handoff_requested && !hasMinInfo) {
-    // Student wants to apply but hasn't filled minimum info yet — just keep collecting
-    await bot.telegram.sendMessage(chatId,
-      "Zo'r! Siz bilan bog'lanishimiz uchun avval bir nechta savollarga javob bering 😊"
-    );
   } else if (patch.current_step === "done") {
     await notifyQualified(bot, lead);
   }

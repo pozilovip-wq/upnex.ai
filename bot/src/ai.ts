@@ -8,6 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface AiResult {
   reply_text: string;
+  admin_report: string | null;
   field_value: string | null;
   advance_step: boolean;
   handoff_requested: boolean;
@@ -16,10 +17,11 @@ export interface AiResult {
 const RESPONSE_SCHEMA = {
   type: "object" as const,
   properties: {
-    reply_text: { type: "string", description: "What to send back to the student." },
+    reply_text: { type: "string", description: "What to send back to the student. NEVER include the HOT LEAD admin report here — only the conversational reply the student should see." },
+    admin_report: { type: ["string", "null"], description: "The full HOT LEAD admin report to send to the Upnex manager. Only set this when handoff_requested is true. NEVER send this to the student." },
     field_value: {
       type: ["string", "null"],
-      description: "The value extracted for the current step's field, or null if not provided yet.",
+      description: "The value extracted for the current step's field from the STUDENT's message only, or null if not provided.",
     },
     advance_step: {
       type: "boolean",
@@ -30,7 +32,7 @@ const RESPONSE_SCHEMA = {
       description: "True if the student is ready to apply / pay / wants to talk to a human now.",
     },
   },
-  required: ["reply_text", "field_value", "advance_step", "handoff_requested"],
+  required: ["reply_text", "admin_report", "field_value", "advance_step", "handoff_requested"],
   additionalProperties: false,
 };
 
@@ -135,7 +137,7 @@ LEAD CLASSIFICATION (internal reasoning at every step):
 🚫 NOT A LEAD: Spam, unrelated, wrong audience
 IMPORTANT: Do NOT classify HOT just because they gave a phone number. HOT = clear intent to apply/start.
 
-WHEN LEAD IS HOT — produce this admin report in your reply_text:
+WHEN LEAD IS HOT — set handoff_requested=true, put a warm closing message in reply_text (e.g. "Zo'r! Mutaxassisimiz tez orada siz bilan bog'lanadi 😊"), and put the full admin report in admin_report field (NEVER in reply_text):
 🔥 HOT LEAD — Ariza topshirishga tayyor!
 
 👤 Ism: [name]
