@@ -1,6 +1,7 @@
 import { Telegraf } from "telegraf";
 import { parseTransaction, saveTransaction, getStats, getServiceBreakdown, formatStats } from "../accounting.js";
 import { ownerName } from "../owners.js";
+import { buildDailyReport, buildWeeklyReport, buildHotLeadsList, buildUnansweredList } from "../dashboard.js";
 
 const SERVICE_LABELS: Record<string, string> = {
   admission: "🎓 Qabul",
@@ -56,23 +57,56 @@ export function registerOwnerHandlers(bot: Telegraf) {
   // /help - owner commands list
   bot.command("ownerhelp", async (ctx) => {
     await ctx.reply(
-      "💼 Upnex Hisobot Bot — Buyruqlar:\n\n" +
-      "💰 Daromad qo'shish uchun shunchaki yozing:\n" +
-      "   \"Jasur dan $500 oldim, visa\"\n" +
-      "   \"$300 SOP yozish uchun Malika\"\n" +
-      "   \"2 mln so'm qabul xizmati\"\n\n" +
-      "/stats — bu oylik umumiy hisobot\n" +
-      "/week — bu haftalik hisobot\n" +
-      "/today — bugungi hisobot\n" +
-      "/all — barcha vaqt hisoboti\n" +
-      "/mystats — mening xizmatlar bo'yicha hisobotim\n"
+      "👑 UPNEX CEO DASHBOARD\n\n" +
+      "📊 LEAD HISOBOTLARI:\n" +
+      "\"Kunlik hisobot\" — bugungi lead statistikasi\n" +
+      "\"Haftalik hisobot\" — 7 kunlik umumiy hisobot\n" +
+      "\"Hot leadlar\" — barcha hot leadlar ro'yxati\n" +
+      "\"Javob berilmagan\" — 3+ soat kutayotgan leadlar\n\n" +
+      "💰 MOLIYAVIY HISOBOT:\n" +
+      "/today — bugungi daromad\n" +
+      "/week — haftalik daromad\n" +
+      "/stats — oylik daromad\n" +
+      "/all — barcha vaqt\n" +
+      "/mystats — shaxsiy hisobot\n\n" +
+      "💰 DAROMAD QO'SHISH:\n" +
+      "\"Jasur dan $500 oldim, visa\"\n" +
+      "\"$300 SOP yozish Malika\"\n\n" +
+      "📅 AVTOMATIK HISOBOTLAR:\n" +
+      "• Har kuni 09:00 — kunlik hisobot\n" +
+      "• Har dushanba 09:00 — haftalik hisobot\n" +
+      "• HOT lead kelganda — darhol xabar\n"
     );
   });
 }
 
+function isCeoCommand(text: string): boolean {
+  const t = text.toLowerCase();
+  return /hot lead|kunlik|haftalik|bugungi statistika|javob berilmagan|follow.up|muammo|warm lead|cold lead|lead ko.rsat|leads|dashboard|hisobot/.test(t);
+}
+
+async function handleCeoCommand(bot: Telegraf, chatId: string, text: string) {
+  const t = text.toLowerCase();
+
+  if (/hot lead/i.test(t)) {
+    await bot.telegram.sendMessage(chatId, await buildHotLeadsList());
+  } else if (/javob berilmagan|kutmoqda|unanswered/i.test(t)) {
+    await bot.telegram.sendMessage(chatId, await buildUnansweredList());
+  } else if (/haftalik|weekly|7 kun/i.test(t)) {
+    await bot.telegram.sendMessage(chatId, await buildWeeklyReport());
+  } else if (/kunlik|bugungi statistika|daily/i.test(t)) {
+    await bot.telegram.sendMessage(chatId, await buildDailyReport());
+  } else if (/hisobot|dashboard/i.test(t)) {
+    await bot.telegram.sendMessage(chatId, await buildDailyReport());
+  } else {
+    // fallback: send daily report
+    await bot.telegram.sendMessage(chatId, await buildDailyReport());
+  }
+}
+
 function isStatsQuestion(text: string): boolean {
   const t = text.toLowerCase();
-  return /stats|hisobot|daromad|income|earn|topd|hafta|bugun|today|week|month|oy|barcha|all|how much|qancha|summary|split|kim ko|ko.proq/.test(t);
+  return /stats|daromad|income|earn|topd|today|week|month|oy|barcha|all|how much|qancha|summary|split|kim ko|ko.proq/.test(t);
 }
 
 async function handleStatsQuestion(bot: Telegraf, chatId: string, text: string) {
@@ -89,7 +123,13 @@ async function handleStatsQuestion(bot: Telegraf, chatId: string, text: string) 
 }
 
 export async function handleOwnerMessage(bot: Telegraf, chatId: string, text: string): Promise<boolean> {
-  // Check if it's a stats/income question first
+  // CEO dashboard commands
+  if (isCeoCommand(text)) {
+    await handleCeoCommand(bot, chatId, text);
+    return true;
+  }
+
+  // Accounting stats
   if (isStatsQuestion(text)) {
     await handleStatsQuestion(bot, chatId, text);
     return true;

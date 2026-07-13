@@ -5,6 +5,7 @@ import { handleOwnerMessage, registerOwnerHandlers } from "./handlers/owner.js";
 import { isOwner } from "./owners.js";
 import { STEPS } from "./steps.js";
 import { notifyNewLead } from "./handoff.js";
+import { sendDailyReport, sendWeeklyReport } from "./dashboard.js";
 
 const requiredEnv = ["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"];
 for (const key of requiredEnv) {
@@ -66,6 +67,26 @@ process.on("unhandledRejection", (reason) => {
 
 bot.launch();
 console.log("Upnex bot is running...");
+
+// ─── Scheduled reports ───────────────────────────────────────────────────────
+function scheduleAt(hour: number, minute: number, fn: () => void) {
+  function next() {
+    const now = new Date();
+    const target = new Date();
+    target.setHours(hour, minute, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    setTimeout(() => { fn(); next(); }, target.getTime() - now.getTime());
+  }
+  next();
+}
+
+// Daily report at 09:00 Tashkent (UTC+5 = 04:00 UTC)
+scheduleAt(4, 0, () => sendDailyReport(bot).catch(console.error));
+
+// Weekly report every Monday at 09:00 Tashkent
+scheduleAt(4, 5, () => {
+  if (new Date().getDay() === 1) sendWeeklyReport(bot).catch(console.error);
+});
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
