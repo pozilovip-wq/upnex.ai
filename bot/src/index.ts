@@ -3,6 +3,8 @@ import { Telegraf } from "telegraf";
 import { handleMessage } from "./handlers/message.js";
 import { handleOwnerMessage, registerOwnerHandlers } from "./handlers/owner.js";
 import { isOwner } from "./owners.js";
+import { STEPS } from "./steps.js";
+import { notifyNewLead } from "./handoff.js";
 
 const requiredEnv = ["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"];
 for (const key of requiredEnv) {
@@ -28,7 +30,9 @@ bot.start(async (ctx) => {
       );
       return;
     }
-    await handleMessage(bot, chatId, ctx.from?.username ?? null, "/start");
+    await ctx.reply(STEPS[0].prompt);
+    // notify admin about this user (fire and forget)
+    handleMessage(bot, chatId, ctx.from?.username ?? null, "/start").catch(() => {});
   } catch (err) {
     console.error("Start error:", err);
     try { await ctx.reply("Kechirasiz, biroz muammo bo'ldi. Birozdan keyin qayta yozing 🙏"); } catch {}

@@ -8,18 +8,13 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   let lead: Lead = await getOrCreateLead(chatId, username);
 
   const isNewLead = lead.conversation_history.length === 0;
-  const isReturning = lead.conversation_history.length > 0 && lead.conversation_history.length <= 2 && text === "/start";
 
-  if (isNewLead) {
+  if (text === "/start") {
+    // Greeting already sent by index.ts — just update DB and notify
     await appendMessages(lead, [{ role: "assistant", content: STEPS[0].prompt }]);
-    await updateLead(lead.id, { current_step: "full_name" });
-    await bot.telegram.sendMessage(chatId, STEPS[0].prompt);
+    if (isNewLead) await updateLead(lead.id, { current_step: "full_name" });
     await notifyNewLead(bot, lead);
     return;
-  }
-
-  if (isReturning) {
-    await notifyNewLead(bot, lead);
   }
 
   const ai = await getAiResponse(lead, lead.conversation_history, text);
