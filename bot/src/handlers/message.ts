@@ -30,7 +30,10 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   }
 
   const updatedLead = { ...lead, ...patch };
-  const isHotLead = ai.handoff_requested;
+
+  // HOT lead requires: country + program collected, AND AI says handoff
+  const hasMinInfo = !!(updatedLead.country && updatedLead.program);
+  const isHotLead = ai.handoff_requested && hasMinInfo;
 
   if (isHotLead) {
     patch.status = "handoff";
@@ -52,11 +55,23 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   await bot.telegram.sendMessage(chatId, ai.reply_text);
 
-  if (isHotLead && ai.admin_report) {
+  if (isHotLead) {
     const ADMIN = process.env.ADMIN_CHAT_ID!;
-    await bot.telegram.sendMessage(ADMIN, ai.admin_report);
-  } else if (isHotLead) {
-    await notifyHandoff(bot, lead);
+    // Build Telegram contact link
+    const tgLink = lead.telegram_username
+      ? `@${lead.telegram_username}`
+      : `<a href="tg://user?id=${chatId}">Telegram chatni ochish</a>`;
+
+    // Use AI report if available, otherwise fallback to handoff notify
+    const report = ai.admin_report
+      ? `${ai.admin_report}\n\n💬 ${tgLink}`
+      : null;
+
+    if (report) {
+      await bot.telegram.sendMessage(ADMIN, report, { parse_mode: "HTML" });
+    } else {
+      await notifyHandoff(bot, lead);
+    }
   } else if (patch.current_step === "done") {
     await notifyQualified(bot, lead);
   }
