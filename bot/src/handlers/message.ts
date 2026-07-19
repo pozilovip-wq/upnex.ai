@@ -31,8 +31,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   const updatedLead = { ...lead, ...patch };
 
-  // HOT lead requires: country + program collected, AND AI says handoff
-  const hasMinInfo = !!(updatedLead.country && updatedLead.program);
+  // HOT lead requires: name + country + program collected, none can be "Aniqlanmagan"
+  const isReal = (v: string | null | undefined) => !!v && !v.toLowerCase().includes("aniqlanmagan");
+  const hasMinInfo = isReal(updatedLead.full_name) && isReal(updatedLead.country) && isReal(updatedLead.program);
   const isHotLead = ai.handoff_requested && hasMinInfo;
 
   if (isHotLead) {

@@ -14,7 +14,6 @@ export const STEPS: StepDef[] = [
   },
   { key: "full_name", field: "full_name", prompt: "Ismingiz va familiyangiz?" },
   { key: "age", field: "age", prompt: "Yoshingiz nechida?" },
-  { key: "phone", field: "phone", prompt: "Telefon raqamingizni qoldira olasizmi?" },
   {
     key: "country",
     field: "country",
