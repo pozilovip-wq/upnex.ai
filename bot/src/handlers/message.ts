@@ -2,7 +2,7 @@ import { Telegraf } from "telegraf";
 import { getOrCreateLead, updateLead, appendMessages, Lead } from "../db.js";
 import { getAiResponse } from "../ai.js";
 import { nextStep, STEPS } from "../steps.js";
-import { notifyHandoff, notifyNewLead, notifyQualified } from "../handoff.js";
+import { notifyHandoff, notifyNewLead, notifyQualified, notifyLeadUpdate } from "../handoff.js";
 
 export async function handleMessage(bot: Telegraf, chatId: string, username: string | null, text: string) {
   let lead: Lead = await getOrCreateLead(chatId, username);
@@ -20,9 +20,11 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   const ai = await getAiResponse(lead, lead.conversation_history, text);
 
   const patch: Partial<Lead> = {};
+  const newFields: string[] = [];
   const currentDef = STEPS.find((s) => s.key === lead.current_step);
   if (currentDef?.field && ai.field_value) {
     (patch as any)[currentDef.field] = ai.field_value;
+    newFields.push(currentDef.field);
   }
 
   if (ai.advance_step) {
@@ -75,5 +77,8 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     }
   } else if (patch.current_step === "done") {
     await notifyQualified(bot, lead);
+  } else if (newFields.length > 0) {
+    // Live update: new field(s) collected
+    await notifyLeadUpdate(bot, { ...lead, ...patch }, newFields);
   }
 }

@@ -2,78 +2,177 @@ import { Telegraf } from "telegraf";
 import { Lead } from "./db.js";
 import { STEPS } from "./steps.js";
 
-const ADMIN = process.env.ADMIN_CHAT_ID!;
+// Primary admin for all notifications
+const ADMIN = "7241691817";
 
-function leadSummary(lead: Lead): string {
-  return STEPS
-    .filter((s) => s.field && (lead as any)[s.field!])
-    .map((s) => `${fieldEmoji(s.field!)} ${fieldLabel(s.field!)}: ${(lead as any)[s.field!]}`)
-    .join("\n");
-}
+const FIELD_EMOJI: Record<string, string> = {
+  full_name: "👤", age: "🎂", country: "🌍",
+  program: "🎓", semester: "📅", current_education: "🏫",
+  english_level: "🗣", budget: "💰", scholarship: "🏆",
+  passport: "🛂", previously_applied: "📋",
+};
 
-function fieldEmoji(field: string): string {
-  const map: Record<string, string> = {
-    full_name: "👤", age: "🎂", phone: "📞", country: "🌍",
-    program: "🎓", semester: "📅", current_education: "🏫",
-    english_level: "🗣", budget: "💰", scholarship: "🏆",
-    passport: "🛂", previously_applied: "📋",
+const FIELD_LABEL: Record<string, string> = {
+  full_name: "Ism", age: "Yosh", country: "Davlat",
+  program: "Daraja", semester: "Semester", current_education: "Ta'lim",
+  english_level: "Ingliz tili", budget: "Byudjet", scholarship: "Grant",
+  passport: "Pasport", previously_applied: "Avval ariza",
+};
+
+const COLLECTIBLE_FIELDS = STEPS.filter((s) => s.field).map((s) => s.field!);
+
+function openChatBtn(lead: Lead) {
+  return {
+    inline_keyboard: [[{
+      text: "💬 Open Chat",
+      url: `tg://user?id=${lead.telegram_chat_id}`,
+    }]],
   };
-  return map[field] ?? "•";
 }
 
-function fieldLabel(field: string): string {
+function timestamp(): string {
+  return new Date().toLocaleString("uz-UZ", {
+    timeZone: "Asia/Tashkent",
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function collectedCount(lead: Lead): number {
+  return COLLECTIBLE_FIELDS.filter((f) => (lead as any)[f]).length;
+}
+
+function leadScore(lead: Lead): number {
+  const filled = collectedCount(lead);
+  const total = COLLECTIBLE_FIELDS.length;
+  let score = Math.round((filled / total) * 60);
+  if (lead.country) score += 10;
+  if (lead.program) score += 10;
+  if (lead.english_level) score += 10;
+  if (lead.budget) score += 5;
+  if (lead.scholarship) score += 5;
+  return Math.min(score, 100);
+}
+
+function statusLine(status: string): string {
   const map: Record<string, string> = {
-    full_name: "Ism", age: "Yosh", phone: "Telefon", country: "Davlat",
-    program: "Daraja", semester: "Semester", current_education: "Ta'lim",
-    english_level: "Ingliz tili", budget: "Byudjet", scholarship: "Grant",
-    passport: "Pasport", previously_applied: "Avval ariza",
+    new: "🟢 New Lead",
+    in_progress: "🟡 Collecting Information",
+    handoff: "🔥 Hot Lead",
+    qualified: "📄 Documents Received",
   };
-  return map[field] ?? field;
+  return map[status] ?? "🟡 In Progress";
 }
 
-function userLink(lead: Lead): string {
-  if (lead.telegram_username) return `@${lead.telegram_username}`;
-  return `<a href="tg://user?id=${lead.telegram_chat_id}">${lead.full_name ?? "Talaba"}</a>`;
+function usernameStr(lead: Lead): string {
+  return lead.telegram_username ? `@${lead.telegram_username}` : "—";
 }
 
-function contactLine(lead: Lead): string {
-  const parts = [];
-  if (lead.full_name) parts.push(`👤 ${lead.full_name}`);
-  if (lead.telegram_username) parts.push(`📱 @${lead.telegram_username}`);
-  if (lead.phone) parts.push(`📞 ${lead.phone}`);
-  parts.push(`💬 <a href="tg://user?id=${lead.telegram_chat_id}">Telegram chatni ochish</a>`);
-  return parts.join("\n");
+async function send(bot: Telegraf, text: string, lead: Lead) {
+  await bot.telegram.sendMessage(ADMIN, text, {
+    parse_mode: "HTML",
+    reply_markup: openChatBtn(lead),
+  });
 }
 
-// Called when student is ready to apply
-export async function notifyHandoff(bot: Telegraf, lead: Lead): Promise<void> {
-  if (!ADMIN) return;
-  const text = [
-    "🔥 HOT LEAD — Ariza topshirishga tayyor!",
-    "",
-    contactLine(lead),
-    "",
-    leadSummary(lead),
-  ].join("\n");
-  await bot.telegram.sendMessage(ADMIN, text, { parse_mode: "HTML" });
-}
-
-// Called when a new student starts chatting for the first time
+// ── NEW LEAD ────────────────────────────────────────────────────────────────
 export async function notifyNewLead(bot: Telegraf, lead: Lead): Promise<void> {
-  if (!ADMIN) return;
-  const text = `🆕 Yangi talaba botga yozdi!\n\n${contactLine(lead)}\n\nBot suhbatni boshlamoqda...`;
-  await bot.telegram.sendMessage(ADMIN, text, { parse_mode: "HTML" });
+  const text = [
+    "🆕 <b>NEW LEAD</b>",
+    "",
+    `👤 Name: ${lead.full_name ?? "—"}`,
+    `📱 Username: ${usernameStr(lead)}`,
+    `🆔 Telegram ID: <code>${lead.telegram_chat_id}</code>`,
+    `🕒 Time: ${timestamp()}`,
+    `🌍 Source: Telegram Bot`,
+    "",
+    `Status: ${statusLine(lead.status ?? "new")}`,
+  ].join("\n");
+  await send(bot, text, lead);
 }
 
-// Called when lead becomes qualified (all info collected)
-export async function notifyQualified(bot: Telegraf, lead: Lead): Promise<void> {
-  if (!ADMIN) return;
+// ── LIVE UPDATE ─────────────────────────────────────────────────────────────
+export async function notifyLeadUpdate(bot: Telegraf, lead: Lead, newFields: string[]): Promise<void> {
+  if (!newFields.length) return;
+
+  const filled = collectedCount(lead);
+  const total = COLLECTIBLE_FIELDS.length;
+  const score = leadScore(lead);
+
+  const fieldLines = newFields
+    .filter((f) => (lead as any)[f])
+    .map((f) => `${FIELD_EMOJI[f] ?? "•"} ${FIELD_LABEL[f] ?? f}: ${(lead as any)[f]}`);
+
   const text = [
-    "✅ Lead to'liq ma'lumot berdi!",
+    "✅ <b>Lead Updated</b>",
     "",
-    contactLine(lead),
+    `👤 Name: ${lead.full_name ?? "—"}`,
+    `📱 Username: ${usernameStr(lead)}`,
+    `🆔 ID: <code>${lead.telegram_chat_id}</code>`,
+    `🕒 Time: ${timestamp()}`,
     "",
-    leadSummary(lead),
+    ...fieldLines,
+    "",
+    `Progress: ${filled} / ${total} fields collected`,
+    `📊 Lead Score: ${score}/100`,
+    `Status: ${statusLine(lead.status ?? "in_progress")}`,
   ].join("\n");
-  await bot.telegram.sendMessage(ADMIN, text, { parse_mode: "HTML" });
+
+  await send(bot, text, lead);
+}
+
+// ── HOT LEAD ────────────────────────────────────────────────────────────────
+export async function notifyHandoff(bot: Telegraf, lead: Lead): Promise<void> {
+  const score = leadScore(lead);
+  const filled = COLLECTIBLE_FIELDS
+    .filter((f) => (lead as any)[f])
+    .map((f) => `${FIELD_EMOJI[f] ?? "•"} ${FIELD_LABEL[f] ?? f}: ${(lead as any)[f]}`)
+    .join("\n");
+
+  const text = [
+    "🔥 <b>HOT LEAD</b>",
+    "",
+    `👤 Name: ${lead.full_name ?? "—"}`,
+    `📱 Username: ${usernameStr(lead)}`,
+    `🆔 ID: <code>${lead.telegram_chat_id}</code>`,
+    `🕒 Time: ${timestamp()}`,
+    "",
+    filled || "ℹ️ Ma'lumotlar to'planmoqda",
+    "",
+    `📊 Lead Score: ${score}/100`,
+    "",
+    "🧠 AI Summary:",
+    "Talaba ariza topshirishga tayyor. Tezkor muloqot tavsiya etiladi.",
+    "",
+    "⚡ Recommended Action:",
+    "Contact within 15 minutes.",
+    "",
+    `Status: 🔥 Hot Lead`,
+  ].join("\n");
+
+  await send(bot, text, lead);
+}
+
+// ── QUALIFIED ───────────────────────────────────────────────────────────────
+export async function notifyQualified(bot: Telegraf, lead: Lead): Promise<void> {
+  const score = leadScore(lead);
+  const filled = COLLECTIBLE_FIELDS
+    .filter((f) => (lead as any)[f])
+    .map((f) => `${FIELD_EMOJI[f] ?? "•"} ${FIELD_LABEL[f] ?? f}: ${(lead as any)[f]}`)
+    .join("\n");
+
+  const text = [
+    "📄 <b>Lead Qualified — All Info Collected</b>",
+    "",
+    `👤 Name: ${lead.full_name ?? "—"}`,
+    `📱 Username: ${usernameStr(lead)}`,
+    `🕒 Time: ${timestamp()}`,
+    "",
+    filled,
+    "",
+    `📊 Lead Score: ${score}/100`,
+    `Status: 📄 Documents Received`,
+  ].join("\n");
+
+  await send(bot, text, lead);
 }
