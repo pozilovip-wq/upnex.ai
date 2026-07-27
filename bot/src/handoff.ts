@@ -2,8 +2,7 @@ import { Telegraf } from "telegraf";
 import { Lead } from "./db.js";
 import { STEPS } from "./steps.js";
 
-// Primary admin for all notifications
-const ADMIN = "7241691817";
+const ADMIN = "7241691817"; // upnex admin — hot leads only
 
 const FIELD_EMOJI: Record<string, string> = {
   full_name: "👤", age: "🎂", country: "🌍",
