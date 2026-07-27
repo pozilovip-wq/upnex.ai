@@ -2,7 +2,8 @@ import { Telegraf } from "telegraf";
 import { Lead } from "./db.js";
 import { STEPS } from "./steps.js";
 
-const ADMIN = "7241691817"; // upnex admin — hot leads only
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID!;
+const BOSS_CHAT_ID = process.env.BOSS_CHAT_ID!;
 
 const FIELD_EMOJI: Record<string, string> = {
   full_name: "👤", age: "🎂", country: "🌍",
@@ -147,11 +148,10 @@ function hvBlock(lead: Lead): string {
   ].join("\n");
 }
 
-async function send(bot: Telegraf, text: string, lead: Lead) {
-  await bot.telegram.sendMessage(ADMIN, text, {
-    parse_mode: "HTML",
-    reply_markup: openChatBtn(lead),
-  });
+async function sendToAll(bot: Telegraf, text: string, lead: Lead) {
+  const opts = { parse_mode: "HTML" as const, reply_markup: openChatBtn(lead) };
+  await bot.telegram.sendMessage(ADMIN_CHAT_ID, text, opts);
+  await bot.telegram.sendMessage(BOSS_CHAT_ID, text, opts);
 }
 
 // ── NEW LEAD ────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export async function notifyNewLead(bot: Telegraf, lead: Lead): Promise<void> {
     "",
     `Status: ${statusLine(lead.status ?? "new")}`,
   ].join("\n");
-  await send(bot, text + hvBlock(lead), lead);
+  await sendToAll(bot, text + hvBlock(lead), lead);
 }
 
 // ── LIVE UPDATE ─────────────────────────────────────────────────────────────
@@ -197,7 +197,7 @@ export async function notifyLeadUpdate(bot: Telegraf, lead: Lead, newFields: str
     `Status: ${statusLine(lead.status ?? "in_progress")}`,
   ].join("\n");
 
-  await send(bot, text + hvBlock(lead), lead);
+  await sendToAll(bot, text + hvBlock(lead), lead);
 }
 
 // ── HOT LEAD ────────────────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ export async function notifyHandoff(bot: Telegraf, lead: Lead): Promise<void> {
     `Status: 🔥 Hot Lead`,
   ].join("\n");
 
-  await send(bot, text + hvBlock(lead), lead);
+  await sendToAll(bot, text + hvBlock(lead), lead);
 }
 
 // ── QUALIFIED ───────────────────────────────────────────────────────────────
@@ -253,5 +253,5 @@ export async function notifyQualified(bot: Telegraf, lead: Lead): Promise<void> 
     `Status: 📄 Documents Received`,
   ].join("\n");
 
-  await send(bot, text + hvBlock(lead), lead);
+  await sendToAll(bot, text + hvBlock(lead), lead);
 }
