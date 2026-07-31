@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CRM Dashboard theme tokens */
+:root {
+  --bg: #0F1629;
+  --card: #1A2340;
+  --border: #2A3A5C;
+  --text: #E8EDF5;
+  --muted: #7A8BAD;
+  --input: #111827;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F0F4F8;
+    --card: #FFFFFF;
+    --border: #D1DCE8;
+    --text: #111827;
+    --muted: #6B7280;
+    --input: #F9FAFB;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F0F4F8;
+  --card: #FFFFFF;
+  --border: #D1DCE8;
+  --text: #111827;
+  --muted: #6B7280;
+  --input: #F9FAFB;
+}
+:root[data-theme="dark"] {
+  --bg: #0F1629;
+  --card: #1A2340;
+  --border: #2A3A5C;
+  --text: #E8EDF5;
+  --muted: #7A8BAD;
+  --input: #111827;
+}
+
 html {
   background: #020617;
   scroll-behavior: smooth;
