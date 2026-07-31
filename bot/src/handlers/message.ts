@@ -3,6 +3,7 @@ import { getOrCreateLead, updateLead, appendMessages, Lead } from "../db.js";
 import { getAiResponse } from "../ai.js";
 import { nextStep, STEPS } from "../steps.js";
 import { notifyHandoff, notifyNewLead } from "../handoff.js";
+import { syncLeadToCRM } from "../crm-sync.js";
 
 export async function handleMessage(bot: Telegraf, chatId: string, username: string | null, text: string) {
   let lead: Lead = await getOrCreateLead(chatId, username);
@@ -54,5 +55,6 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   if (isHotLead) {
     await notifyHandoff(bot, lead);
+    syncLeadToCRM(lead).catch(() => {}); // fire-and-forget, never crashes bot
   }
 }
