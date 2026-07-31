@@ -1,10 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { Lead } from "./db.js";
 
-const crm = createClient(
-  "https://ivhkczwosslgergpimfd.supabase.co",
-  process.env.CRM_SUPABASE_KEY!
-);
+let _crm: SupabaseClient | null = null;
+function getCrm(): SupabaseClient | null {
+  if (!process.env.CRM_SUPABASE_KEY) return null;
+  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY);
+  return _crm;
+}
 
 function mapStage(status: string): string {
   const map: Record<string, string> = {
@@ -87,13 +89,14 @@ export function buildCrmStudent(lead: Lead) {
 }
 
 export async function syncLeadToCRM(lead: Lead): Promise<void> {
+  const crm = getCrm();
+  if (!crm) return;
   try {
     const student = buildCrmStudent(lead);
     const tgId = lead.telegram_username
       ? `@${lead.telegram_username}`
       : `id:${lead.telegram_chat_id}`;
 
-    // Check if already exists
     const { data: existing } = await crm
       .from("students")
       .select("id")
@@ -101,15 +104,10 @@ export async function syncLeadToCRM(lead: Lead): Promise<void> {
       .maybeSingle();
 
     if (existing) {
-      // Update existing record
-      const { error } = await crm
-        .from("students")
-        .update(student)
-        .eq("id", existing.id);
+      const { error } = await crm.from("students").update(student).eq("id", existing.id);
       if (error) console.error("[CRM] Update failed:", error.message);
       else console.log(`[CRM] ✅ Updated ${student.full_name}`);
     } else {
-      // Insert new
       const { error } = await crm.from("students").insert(student);
       if (error) console.error("[CRM] Insert failed:", error.message);
       else console.log(`[CRM] ✅ Inserted ${student.full_name}`);
