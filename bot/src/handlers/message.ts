@@ -55,6 +55,8 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   if (isHotLead) {
     await notifyHandoff(bot, lead);
-    syncLeadToCRM(lead).catch(() => {}); // fire-and-forget, never crashes bot
   }
+
+  // Sync every lead update to CRM (fire-and-forget)
+  syncLeadToCRM({ ...lead, ...patch }).catch(() => {});
 }
