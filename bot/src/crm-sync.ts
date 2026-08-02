@@ -24,10 +24,11 @@ function mapLeadScore(status: string): string {
   return "Cold";
 }
 
-function parseIelts(val: string | null): number {
-  if (!val) return 0;
+function parseIelts(val: string | null): number | undefined {
+  if (!val) return undefined;
   const m = val.match(/[\d.]+/);
-  return m ? parseFloat(m[0]) : 0;
+  const n = m ? parseFloat(m[0]) : 0;
+  return n > 0 && n <= 9 ? n : undefined;
 }
 
 function parseBudget(val: string | null): number {
@@ -67,7 +68,7 @@ export function buildCrmStudent(lead: Lead) {
     preferred_country: lead.country ?? "USA",
     major:        lead.program ?? "",
     intake:       mapIntake(lead.semester),
-    ielts:        ielts,
+    ielts:        ielts ?? undefined,
     duolingo:     hasDuolingo ? 1 : undefined,
     sat:          hasSat ? 1 : undefined,
     budget:       parseBudget(lead.budget),
