@@ -60,10 +60,10 @@ export function buildCrmStudent(lead: Lead) {
   const hasSat = /sat/i.test(lead.english_level ?? "");
 
   // Last 8 messages from bot conversation
-  const recentMessages = (lead.conversation_history ?? [])
+  const recentMessages = (Array.isArray(lead.conversation_history) ? lead.conversation_history : [])
     .filter(m => m.role === "user" || m.role === "assistant")
     .slice(-8)
-    .map(m => `${m.role === "user" ? "👤" : "🤖"} ${m.content.slice(0, 200)}`)
+    .map(m => `${m.role === "user" ? "👤" : "🤖"} ${(m.content ?? "").slice(0, 200)}`)
     .join("\n");
 
   const profileNotes = [
