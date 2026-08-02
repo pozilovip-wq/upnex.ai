@@ -85,6 +85,7 @@ export function buildCrmStudent(lead: Lead) {
     phone:        lead.phone ?? "",
     email:        "",
     telegram:     lead.telegram_username ? `@${lead.telegram_username}` : `id:${lead.telegram_chat_id}`,
+    telegram_chat_id: lead.telegram_chat_id,
     country:      "Uzbekistan",
     preferred_country: lead.country ?? "USA",
     major:        lead.program ?? "",
