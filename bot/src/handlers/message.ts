@@ -1,5 +1,5 @@
 import { Telegraf } from "telegraf";
-import { getOrCreateLead, updateLead, appendMessages, Lead } from "../db.js";
+import { getOrCreateLead, updateLead, appendMessages, logMessage, Lead } from "../db.js";
 import { getAiResponse } from "../ai.js";
 import { nextStep, STEPS } from "../steps.js";
 import { notifyHandoff, notifyNewLead } from "../handoff.js";
@@ -138,6 +138,10 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     { role: "user", content: text },
     { role: "assistant", content: ai.reply_text },
   ]);
+
+  // Log in/out to CRM messages table (fire-and-forget)
+  logMessage(chatId, "in", text).catch(() => {});
+  logMessage(chatId, "out", ai.reply_text).catch(() => {});
 
   await bot.telegram.sendMessage(chatId, ai.reply_text);
 

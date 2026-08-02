@@ -1,6 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+
+// CRM Supabase — lazy init, only used for message logging
+let _crm: SupabaseClient | null = null;
+function getCrmForMessages(): SupabaseClient | null {
+  if (!process.env.CRM_SUPABASE_KEY) return null;
+  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY);
+  return _crm;
+}
 
 export interface Lead {
   id: string;
@@ -56,4 +64,18 @@ export async function appendMessages(
 ): Promise<void> {
   const history = [...lead.conversation_history, ...messages];
   await updateLead(lead.id, { conversation_history: history } as Partial<Lead>);
+}
+
+export async function logMessage(
+  chatId: string,
+  direction: "in" | "out",
+  text: string
+): Promise<void> {
+  const crm = getCrmForMessages();
+  if (!crm) return;
+  try {
+    await crm.from("messages").insert({ telegram_chat_id: chatId, direction, text });
+  } catch {
+    // fire-and-forget — never crash the bot over logging
+  }
 }
