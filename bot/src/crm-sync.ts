@@ -59,6 +59,27 @@ export function buildCrmStudent(lead: Lead) {
   const hasDuolingo = /duolingo/i.test(lead.english_level ?? "");
   const hasSat = /sat/i.test(lead.english_level ?? "");
 
+  // Last 8 messages from bot conversation
+  const recentMessages = (lead.conversation_history ?? [])
+    .filter(m => m.role === "user" || m.role === "assistant")
+    .slice(-8)
+    .map(m => `${m.role === "user" ? "👤" : "🤖"} ${m.content.slice(0, 200)}`)
+    .join("\n");
+
+  const profileNotes = [
+    lead.current_education ? `Ta'lim: ${lead.current_education}` : "",
+    lead.english_level     ? `Ingliz tili: ${lead.english_level}` : "",
+    lead.scholarship       ? `Scholarship: ${lead.scholarship}` : "",
+    lead.budget            ? `Byudjet: ${lead.budget}` : "",
+    lead.semester          ? `Semester: ${lead.semester}` : "",
+    `Bot status: ${lead.status}`,
+    `Telegram ID: ${lead.telegram_chat_id}`,
+  ].filter(Boolean).join(" | ");
+
+  const notes = recentMessages
+    ? `${profileNotes}\n\n── Bot suhbati (so'nggi xabarlar) ──\n${recentMessages}`
+    : profileNotes;
+
   return {
     full_name:    lead.full_name ?? "Unknown",
     phone:        lead.phone ?? "",
@@ -76,15 +97,7 @@ export function buildCrmStudent(lead: Lead) {
     stage:        mapStage(lead.status ?? "new"),
     lead_score:   mapLeadScore(lead.status ?? "new"),
     enrollment_probability: lead.status === "handoff" ? 70 : lead.status === "qualified" ? 50 : 20,
-    notes: [
-      lead.current_education ? `Ta'lim: ${lead.current_education}` : "",
-      lead.english_level     ? `Ingliz tili: ${lead.english_level}` : "",
-      lead.scholarship       ? `Scholarship: ${lead.scholarship}` : "",
-      lead.budget            ? `Byudjet: ${lead.budget}` : "",
-      lead.semester          ? `Semester: ${lead.semester}` : "",
-      `Bot status: ${lead.status}`,
-      `Telegram ID: ${lead.telegram_chat_id}`,
-    ].filter(Boolean).join(" | "),
+    notes,
     tags: ["telegram-bot", lead.status ?? "new"],
   };
 }
