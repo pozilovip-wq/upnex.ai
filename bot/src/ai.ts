@@ -12,6 +12,7 @@ export interface AiResult {
   field_value: string | null;
   advance_step: boolean;
   handoff_requested: boolean;
+  extra_fields: Partial<Record<string, string | null>>;
 }
 
 const RESPONSE_SCHEMA = {
@@ -31,8 +32,28 @@ const RESPONSE_SCHEMA = {
       type: "boolean",
       description: "True if the student is ready to apply / pay / wants to talk to a human now.",
     },
+    // Multi-field extraction — capture any field the student mentions, regardless of current step
+    extra_fields: {
+      type: "object",
+      description: "Any additional fields the student mentioned in this message that are NOT the current step's field. Only include fields where the student explicitly stated a clear value. Never guess or infer.",
+      properties: {
+        full_name:         { type: ["string", "null"] },
+        age:               { type: ["string", "null"] },
+        country:           { type: ["string", "null"] },
+        program:           { type: ["string", "null"] },
+        semester:          { type: ["string", "null"] },
+        current_education: { type: ["string", "null"] },
+        english_level:     { type: ["string", "null"] },
+        budget:            { type: ["string", "null"] },
+        scholarship:       { type: ["string", "null"] },
+        passport:          { type: ["string", "null"] },
+        previously_applied:{ type: ["string", "null"] },
+      },
+      required: ["full_name","age","country","program","semester","current_education","english_level","budget","scholarship","passport","previously_applied"],
+      additionalProperties: false,
+    },
   },
-  required: ["reply_text", "admin_report", "field_value", "advance_step", "handoff_requested"],
+  required: ["reply_text", "admin_report", "field_value", "advance_step", "handoff_requested", "extra_fields"],
   additionalProperties: false,
 };
 

@@ -107,10 +107,23 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   const ai = await getAiResponse(lead, lead.conversation_history, text);
 
   const patch: Partial<Lead> = {};
+
+  // Primary: save the current step's field
   const currentDef = STEPS.find((s) => s.key === lead.current_step);
   if (currentDef?.field && ai.field_value) {
     const validated = validateFieldValue(currentDef.field, ai.field_value);
     if (validated) (patch as any)[currentDef.field] = validated;
+  }
+
+  // Secondary: save any other fields the student mentioned, only if currently empty
+  if (ai.extra_fields) {
+    for (const [field, value] of Object.entries(ai.extra_fields)) {
+      if (!value) continue;                          // skip nulls
+      if (field === currentDef?.field) continue;     // already handled above
+      if ((lead as any)[field]) continue;            // never overwrite existing value
+      const validated = validateFieldValue(field, value);
+      if (validated) (patch as any)[field] = validated;
+    }
   }
 
   if (ai.advance_step) {
