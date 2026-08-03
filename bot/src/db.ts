@@ -73,9 +73,6 @@ export async function logMessage(
 ): Promise<void> {
   const crm = getCrmForMessages();
   if (!crm) return;
-  try {
-    await crm.from("messages").insert({ telegram_chat_id: chatId, direction, text });
-  } catch {
-    // fire-and-forget — never crash the bot over logging
-  }
+  const { error } = await crm.from("messages").insert({ telegram_chat_id: chatId, direction, text });
+  if (error) console.error(`[logMessage] insert failed (${direction}):`, error.message);
 }
