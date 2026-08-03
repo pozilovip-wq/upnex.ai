@@ -139,9 +139,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     { role: "assistant", content: ai.reply_text },
   ]);
 
-  // Log in/out to CRM messages table (fire-and-forget)
-  logMessage(chatId, "in", text).catch(() => {});
-  logMessage(chatId, "out", ai.reply_text).catch(() => {});
+  // Log incoming first, await it so the DB timestamp is strictly earlier than the reply
+  await logMessage(chatId, "in", text);
+  logMessage(chatId, "out", ai.reply_text).catch(() => {});;
 
   await bot.telegram.sendMessage(chatId, ai.reply_text);
 
