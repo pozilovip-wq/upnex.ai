@@ -6,7 +6,9 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KE
 let _crm: SupabaseClient | null = null;
 function getCrmForMessages(): SupabaseClient | null {
   if (!process.env.CRM_SUPABASE_KEY) return null;
-  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY);
+  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   return _crm;
 }
 

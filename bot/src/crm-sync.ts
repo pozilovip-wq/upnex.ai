@@ -4,7 +4,9 @@ import { Lead } from "./db.js";
 let _crm: SupabaseClient | null = null;
 function getCrm(): SupabaseClient | null {
   if (!process.env.CRM_SUPABASE_KEY) return null;
-  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY);
+  if (!_crm) _crm = createClient("https://ivhkczwosslgergpimfd.supabase.co", process.env.CRM_SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   return _crm;
 }
 
@@ -112,21 +114,11 @@ export async function syncLeadToCRM(lead: Lead): Promise<void> {
       ? `@${lead.telegram_username}`
       : `id:${lead.telegram_chat_id}`;
 
-    const { data: existing } = await crm
+    const { error } = await crm
       .from("students")
-      .select("id")
-      .eq("telegram", tgId)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await crm.from("students").update(student).eq("id", existing.id);
-      if (error) console.error("[CRM] Update failed:", error.message);
-      else console.log(`[CRM] ✅ Updated ${student.full_name}`);
-    } else {
-      const { error } = await crm.from("students").insert(student);
-      if (error) console.error("[CRM] Insert failed:", error.message);
-      else console.log(`[CRM] ✅ Inserted ${student.full_name}`);
-    }
+      .upsert(student, { onConflict: "telegram_chat_id" });
+    if (error) console.error("[CRM] Upsert failed:", error.message);
+    else console.log(`[CRM] ✅ Synced ${student.full_name}`);
   } catch (err) {
     console.error("[CRM] Unexpected error:", err);
   }
