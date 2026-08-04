@@ -60,7 +60,7 @@ const RESPONSE_SCHEMA = {
 function buildSystemPrompt(lead: Lead): string {
   const known = STEPS
     .filter((s) => s.field && (lead as any)[s.field])
-    .map((s) => `${s.field}: ${(lead as any)[s.field]}`)
+    .map((s) => `${s.field!}: ${(lead as any)[s.field!]}`)
     .join(", ");
 
   const missing = STEPS
