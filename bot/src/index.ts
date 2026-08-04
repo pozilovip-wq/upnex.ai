@@ -6,6 +6,7 @@ import { isOwner } from "./owners.js";
 import { STEPS } from "./steps.js";
 import { notifyNewLead } from "./handoff.js";
 import { sendDailyReport, sendWeeklyReport } from "./dashboard.js";
+import { startHealthServer, state as healthState } from "./health.js";
 
 const requiredEnv = ["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"];
 for (const key of requiredEnv) {
@@ -60,12 +61,30 @@ bot.on("text", async (ctx) => {
   }
 });
 
-// Prevent unhandled rejections from crashing the process
+// If Telegraf's polling loop dies with a 409 conflict (two instances racing),
+// the process stays alive but receives nothing. Crash intentionally so Railway
+// restarts a single clean instance.
 process.on("unhandledRejection", (reason) => {
+  const msg = String(reason);
+  if (msg.includes("409") || msg.includes("terminated by other getUpdates")) {
+    console.error("[fatal] Telegraf 409 conflict — exiting so Railway restarts a clean instance");
+    process.exit(1);
+  }
   console.error("Unhandled rejection:", reason);
 });
 
-bot.launch();
+// Track last processed update for the health endpoint
+bot.use((_ctx, next) => {
+  healthState.lastUpdateAt = Date.now();
+  return next();
+});
+
+startHealthServer();
+bot.launch().catch((err) => {
+  healthState.pollingError = String(err);
+  console.error("[fatal] bot.launch() failed:", err);
+  process.exit(1);
+});
 console.log("Upnex bot is running...");
 
 // ─── Scheduled reports ───────────────────────────────────────────────────────
