@@ -62,6 +62,19 @@ bot.on("text", async (ctx) => {
 });
 
 // ─── Telegram Business / Secretary Mode ──────────────────────────────────────
+// Fires when @upnex_admin connects (or disconnects) the bot via Telegram Business.
+// We store can_reply per connection so business_message never attempts a send
+// when the permission has been revoked.
+const businessConnections = new Map<string, boolean>(); // connectionId -> can_reply
+
+bot.on("business_connection" as any, async (ctx: any) => {
+  const conn = ctx.update.business_connection;
+  if (!conn) return;
+  const { id, is_enabled, can_reply } = conn;
+  businessConnections.set(id, !!is_enabled && !!can_reply);
+  console.log(`[business_connection] id=${id} is_enabled=${is_enabled} can_reply=${can_reply}`);
+});
+
 // Handles messages sent directly to @upnex_admin personal account.
 // Telegram forwards them here with a business_connection_id so the reply
 // appears to come FROM @upnex_admin, not from the bot.
@@ -71,6 +84,19 @@ bot.on("business_message" as any, async (ctx: any) => {
   const chatId = String(msg.chat.id);
   const username: string | null = msg.from?.username ?? null;
   const businessConnectionId: string = msg.business_connection_id;
+
+  // Respect can_reply. If the connection hasn't been seen yet (first message
+  // after a fresh deploy), assume allowed — Telegram only delivers business_message
+  // when the connection is active.
+  const canReply = businessConnections.has(businessConnectionId)
+    ? businessConnections.get(businessConnectionId)!
+    : true;
+
+  if (!canReply) {
+    console.log(`[business] connection ${businessConnectionId} has can_reply=false — skipping reply`);
+    return;
+  }
+
   try {
     console.log(`[business] message from ${chatId} (@${username}): ${msg.text.slice(0, 60)}`);
     await handleMessage(bot, chatId, username, msg.text, businessConnectionId);
