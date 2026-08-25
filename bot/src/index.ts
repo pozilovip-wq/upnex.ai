@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Telegraf } from "telegraf";
 import { handleMessage } from "./handlers/message.js";
+import { handleBusinessMessage } from "./handlers/business.js";
 import { handleOwnerMessage, registerOwnerHandlers } from "./handlers/owner.js";
 import { isOwner } from "./owners.js";
 import { STEPS } from "./steps.js";
@@ -99,7 +100,7 @@ bot.on("business_message" as any, async (ctx: any) => {
 
   try {
     console.log(`[business] message from ${chatId} (@${username}): ${msg.text.slice(0, 60)}`);
-    await handleMessage(bot, chatId, username, msg.text, businessConnectionId);
+    await handleBusinessMessage(bot, chatId, username, msg.text, businessConnectionId);
   } catch (err) {
     console.error("[business] handler error:", err);
   }
