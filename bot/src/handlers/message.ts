@@ -104,6 +104,22 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     return;
   }
 
+  // Business chat: no /start is ever sent, so the very first user text arrives
+  // with an empty conversation history. Mirror the /start behaviour: send the
+  // welcome, record it, then fall through and process their text normally so
+  // neither the welcome nor their first message is lost.
+  if (isNewLead && businessConnectionId) {
+    const welcome = STEPS[0].prompt;
+    await appendMessages(lead, [{ role: "assistant", content: welcome }]);
+    await updateLead(lead.id, { current_step: "full_name" });
+    await notifyNewLead(bot, lead);
+    await bot.telegram.sendMessage(chatId, welcome, {
+      business_connection_id: businessConnectionId,
+    } as any);
+    // Reload lead so conversation_history now includes the welcome
+    lead = await getOrCreateLead(chatId, username);
+  }
+
   const ai = await getAiResponse(lead, lead.conversation_history, text);
 
   const patch: Partial<Lead> = {};
