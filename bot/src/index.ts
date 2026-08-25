@@ -105,16 +105,42 @@ bot.on("business_message" as any, async (ctx: any) => {
   }
 });
 
-// If Telegraf's polling loop dies with a 409 conflict (two instances racing),
-// the process stays alive but receives nothing. Crash intentionally so Railway
-// restarts a single clean instance.
+// ─── 409 conflict guard ───────────────────────────────────────────────────────
+// A 409 means two instances are polling simultaneously (e.g. during a Railway
+// deploy). The process must exit so Railway restarts a single clean instance.
+// Telegraf can surface this three different ways — we catch all of them.
+
+function is409(err: unknown): boolean {
+  const msg = String(err);
+  return msg.includes("409") || msg.includes("terminated by other getUpdates");
+}
+
+// 1. Errors thrown inside bot middleware / handlers
+bot.catch((err: unknown) => {
+  if (is409(err)) {
+    console.error("[fatal] Telegraf 409 conflict (bot.catch) — exiting");
+    process.exit(1);
+  }
+  console.error("Bot error:", err);
+});
+
+// 2. Unhandled promise rejections (e.g. from the polling loop in older paths)
 process.on("unhandledRejection", (reason) => {
-  const msg = String(reason);
-  if (msg.includes("409") || msg.includes("terminated by other getUpdates")) {
-    console.error("[fatal] Telegraf 409 conflict — exiting so Railway restarts a clean instance");
+  if (is409(reason)) {
+    console.error("[fatal] Telegraf 409 conflict (unhandledRejection) — exiting");
     process.exit(1);
   }
   console.error("Unhandled rejection:", reason);
+});
+
+// 3. Synchronous uncaught exceptions
+process.on("uncaughtException", (err) => {
+  if (is409(err)) {
+    console.error("[fatal] Telegraf 409 conflict (uncaughtException) — exiting");
+    process.exit(1);
+  }
+  console.error("Uncaught exception:", err);
+  process.exit(1);
 });
 
 // Track last processed update for the health endpoint
