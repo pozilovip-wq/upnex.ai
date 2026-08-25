@@ -92,7 +92,7 @@ function validateFieldValue(field: string, value: string): string | null {
   }
 }
 
-export async function handleMessage(bot: Telegraf, chatId: string, username: string | null, text: string) {
+export async function handleMessage(bot: Telegraf, chatId: string, username: string | null, text: string, businessConnectionId?: string) {
   let lead: Lead = await getOrCreateLead(chatId, username);
 
   const isNewLead = lead.conversation_history.length === 0;
@@ -156,7 +156,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   await logMessage(chatId, "in", text);
   logMessage(chatId, "out", ai.reply_text).catch(() => {});;
 
-  await bot.telegram.sendMessage(chatId, ai.reply_text);
+  await bot.telegram.sendMessage(chatId, ai.reply_text, {
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+  } as any);
 
   if (isHotLead) {
     await notifyHandoff(bot, lead);

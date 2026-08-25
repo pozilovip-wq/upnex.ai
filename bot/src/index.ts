@@ -61,6 +61,24 @@ bot.on("text", async (ctx) => {
   }
 });
 
+// ─── Telegram Business / Secretary Mode ──────────────────────────────────────
+// Handles messages sent directly to @upnex_admin personal account.
+// Telegram forwards them here with a business_connection_id so the reply
+// appears to come FROM @upnex_admin, not from the bot.
+bot.on("business_message" as any, async (ctx: any) => {
+  const msg = ctx.update.business_message;
+  if (!msg?.text) return; // ignore non-text (photos, stickers, etc.)
+  const chatId = String(msg.chat.id);
+  const username: string | null = msg.from?.username ?? null;
+  const businessConnectionId: string = msg.business_connection_id;
+  try {
+    console.log(`[business] message from ${chatId} (@${username}): ${msg.text.slice(0, 60)}`);
+    await handleMessage(bot, chatId, username, msg.text, businessConnectionId);
+  } catch (err) {
+    console.error("[business] handler error:", err);
+  }
+});
+
 // If Telegraf's polling loop dies with a 409 conflict (two instances racing),
 // the process stays alive but receives nothing. Crash intentionally so Railway
 // restarts a single clean instance.
