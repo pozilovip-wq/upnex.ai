@@ -81,16 +81,28 @@ bot.on("business_connection" as any, async (ctx: any) => {
 // appears to come FROM @upnex_admin, not from the bot.
 bot.on("business_message" as any, async (ctx: any) => {
   const msg = ctx.update.business_message;
-  if (!msg?.text) return; // ignore non-text (photos, stickers, etc.)
-  const chatId = String(msg.chat.id);
-  const username: string | null = msg.from?.username ?? null;
-  const businessConnectionId: string = msg.business_connection_id;
+  const chatId = String(msg?.chat?.id ?? "");
+  const username: string | null = msg?.from?.username ?? null;
+  const businessConnectionId: string | undefined = msg?.business_connection_id;
+
+  if (!chatId || !businessConnectionId) return; // malformed update
+
+  if (!msg?.text) {
+    // Non-text message (photo, voice, sticker, etc.) — send a polite fallback
+    try {
+      await bot.telegram.sendMessage(chatId,
+        "Ko'rdik! Matn yozsangiz, aniqroq yordam bera olamiz 😊",
+        { business_connection_id: businessConnectionId } as any
+      );
+    } catch {}
+    return;
+  }
 
   // Respect can_reply. If the connection hasn't been seen yet (first message
   // after a fresh deploy), assume allowed — Telegram only delivers business_message
   // when the connection is active.
-  const canReply = businessConnections.has(businessConnectionId)
-    ? businessConnections.get(businessConnectionId)!
+  const canReply = businessConnections.has(businessConnectionId as string)
+    ? businessConnections.get(businessConnectionId as string)!
     : true;
 
   if (!canReply) {

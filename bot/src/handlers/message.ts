@@ -105,9 +105,11 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   }
 
   // Business chat: no /start is ever sent, so the very first user text arrives
-  // with an empty conversation history. Mirror the /start behaviour: send the
-  // welcome, record it, then fall through and process their text normally so
-  // neither the welcome nor their first message is lost.
+  // with an empty conversation history. Send the welcome and return — identical
+  // to the /start path on the main bot. Their next message starts the real flow.
+  // (Processing their first text immediately after the welcome causes the AI to
+  // ask for name while the welcome already asked about school/city — two
+  // conflicting questions that confuse leads.)
   if (isNewLead && businessConnectionId) {
     const welcome = STEPS[0].prompt;
     await appendMessages(lead, [{ role: "assistant", content: welcome }]);
@@ -116,8 +118,7 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     await bot.telegram.sendMessage(chatId, welcome, {
       business_connection_id: businessConnectionId,
     } as any);
-    // Reload lead so conversation_history now includes the welcome
-    lead = await getOrCreateLead(chatId, username);
+    return;
   }
 
   const ai = await getAiResponse(lead, lead.conversation_history, text);
@@ -171,6 +172,11 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   // Log incoming first, await it so the DB timestamp is strictly earlier than the reply
   await logMessage(chatId, "in", text);
   logMessage(chatId, "out", ai.reply_text).catch(() => {});;
+
+  if (!ai.reply_text || typeof ai.reply_text !== "string" || !ai.reply_text.trim()) {
+    console.error(`[handleMessage] ai.reply_text is empty/undefined for chat ${chatId} — skipping send`);
+    return;
+  }
 
   await bot.telegram.sendMessage(chatId, ai.reply_text, {
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),

@@ -60,7 +60,7 @@ export async function handleBusinessMessage(
         const fallback = freeSlots[0] ?? "08:00";
         await bizReply(
           bot, chatId, businessConnectionId,
-          `Kechirasiz, soat ${chosen} allaqachon band bo'lib qoldi 🙏 Sizni ${formatDate(date)} soat ${fallback} da kutamiz. To'g'rimi?`
+          `Voy, ${chosen} band bo'lib qolibdi 😅 ${formatDate(date)} soat ${fallback} da qo'ng'iroq qilsak bo'ladimi?`
         );
         return;
       }
@@ -68,10 +68,11 @@ export async function handleBusinessMessage(
       await confirmSlot(chatId, date, chosen);
 
       const lead = await getOrCreateLead(chatId, username);
-      const name = lead.full_name ?? username ?? "siz";
+      const name = lead.full_name ?? username ?? null;
+      const greeting = name ? `${name}, yozib qoldirdik!` : "Yozib qoldirdik!";
       await bizReply(
         bot, chatId, businessConnectionId,
-        `Ajoyib! ✅ ${name}, sizni ${formatDate(date)} soat ${chosen} da kutamiz 📞\nMaslahatchi siz bilan bog'lanadi. Agar o'zgarish bo'lsa, @upnex_admin ga yozing.`
+        `${greeting} ${formatDate(date)} soat ${chosen} da qo'ng'iroq qilamiz 📞\nAgar vaqt o'zgarsa — @upnex_admin ga bexijolat yozing.`
       );
 
       console.log(`[business] call booked: ${chatId} → ${date} ${chosen}`);
@@ -98,7 +99,7 @@ export async function handleBusinessMessage(
     if (freeSlots.length === 0) {
       await bizReply(
         bot, chatId, businessConnectionId,
-        `Bugungi barcha vaqtlar band. Ertaga soat 08:00 yoki 19:00 da qo'ng'iroq qilsak bo'ladimi? 📞`
+        `Bugun vaqtlar band ekan, lekin ertaga bo'sh — soat 08:00 yoki 19:00 qulaymi? 📞`
       );
       return;
     }
@@ -109,12 +110,12 @@ export async function handleBusinessMessage(
     if (freeSlots.length === 2) {
       await bizReply(
         bot, chatId, businessConnectionId,
-        `${formatDate(date)} soat 08:00 yoki 19:00 da qo'ng'iroq qilishimiz mumkin 📞\nQaysi biri sizga qulay?`
+        `${formatDate(date)} soat 08:00 yoki 19:00 da qo'ng'iroq qilsak — qaysi biri qulay? 📞`
       );
     } else {
       await bizReply(
         bot, chatId, businessConnectionId,
-        `${formatDate(date)} soat ${freeSlots[0]} da qo'ng'iroq qilsak bo'ladimi? 📞`
+        `${formatDate(date)} soat ${freeSlots[0]} da qo'ng'iroq qilamiz — ma'qulmi? 📞`
       );
     }
 
