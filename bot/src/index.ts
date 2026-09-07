@@ -66,26 +66,43 @@ bot.on("text", async (ctx) => {
 // Fires when @upnex_admin connects (or disconnects) the bot via Telegram Business.
 // We store can_reply per connection so business_message never attempts a send
 // when the permission has been revoked.
-const businessConnections = new Map<string, boolean>(); // connectionId -> can_reply
+interface BizConnection { canReply: boolean; ownerUserId: number }
+const businessConnections = new Map<string, BizConnection>(); // connectionId -> state
 
 bot.on("business_connection" as any, async (ctx: any) => {
   const conn = ctx.update.business_connection;
   if (!conn) return;
-  const { id, is_enabled, can_reply } = conn;
-  businessConnections.set(id, !!is_enabled && !!can_reply);
-  console.log(`[business_connection] id=${id} is_enabled=${is_enabled} can_reply=${can_reply}`);
+  const { id, is_enabled, can_reply, user } = conn;
+  businessConnections.set(id, {
+    canReply: !!is_enabled && !!can_reply,
+    ownerUserId: user?.id ?? 0,
+  });
+  console.log(`[business_connection] id=${id} is_enabled=${is_enabled} can_reply=${can_reply} owner=${user?.id}`);
 });
 
 // Handles messages sent directly to @upnex_admin personal account.
-// Telegram forwards them here with a business_connection_id so the reply
-// appears to come FROM @upnex_admin, not from the bot.
+// Telegram delivers business_message for BOTH directions — messages from the
+// customer AND messages the owner types manually. We must skip owner messages.
 bot.on("business_message" as any, async (ctx: any) => {
   const msg = ctx.update.business_message;
   const chatId = String(msg?.chat?.id ?? "");
+  const senderId: number = msg?.from?.id ?? 0;
   const username: string | null = msg?.from?.username ?? null;
   const businessConnectionId: string | undefined = msg?.business_connection_id;
 
   if (!chatId || !businessConnectionId) return; // malformed update
+
+  // ── Owner-sent message guard ─────────────────────────────────────────────
+  // If we've seen the business_connection event, compare sender to stored owner ID.
+  // If not seen yet (first message after fresh deploy), fall back to env var.
+  const conn = businessConnections.get(businessConnectionId as string);
+  const ownerUserId: number = conn?.ownerUserId
+    ?? (process.env.BUSINESS_OWNER_ID ? parseInt(process.env.BUSINESS_OWNER_ID) : 0);
+
+  if (ownerUserId && senderId === ownerUserId) {
+    console.log(`[business] skipping owner-sent message (from=${senderId})`);
+    return;
+  }
 
   if (!msg?.text) {
     // Non-text message (photo, voice, sticker, etc.) — send a polite fallback
@@ -101,9 +118,7 @@ bot.on("business_message" as any, async (ctx: any) => {
   // Respect can_reply. If the connection hasn't been seen yet (first message
   // after a fresh deploy), assume allowed — Telegram only delivers business_message
   // when the connection is active.
-  const canReply = businessConnections.has(businessConnectionId as string)
-    ? businessConnections.get(businessConnectionId as string)!
-    : true;
+  const canReply = conn ? conn.canReply : true;
 
   if (!canReply) {
     console.log(`[business] connection ${businessConnectionId} has can_reply=false — skipping reply`);
