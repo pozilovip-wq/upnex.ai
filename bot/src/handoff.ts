@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { Lead } from "./db.js";
-import { STEPS } from "./steps.js";
+import { ALL_FIELDS } from "./steps.js";
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID!;
 const BOSS_CHAT_ID = process.env.BOSS_CHAT_ID!;
@@ -19,7 +19,7 @@ const FIELD_LABEL: Record<string, string> = {
   passport: "Pasport", previously_applied: "Avval ariza",
 };
 
-const COLLECTIBLE_FIELDS = STEPS.filter((s) => s.field).map((s) => s.field!);
+const COLLECTIBLE_FIELDS: string[] = [...ALL_FIELDS];
 
 function openChatBtn(lead: Lead) {
   return {

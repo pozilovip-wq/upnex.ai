@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import { getOrCreateLead, updateLead, appendMessages, logMessage, Lead } from "../db.js";
 import { getAiResponse } from "../ai.js";
-import { nextStep, STEPS } from "../steps.js";
+import { STEPS, currentStepFor, computeLeadScore } from "../steps.js";
 import { notifyHandoff, notifyNewLead } from "../handoff.js";
 import { syncLeadToCRM } from "../crm-sync.js";
 
@@ -11,7 +11,8 @@ const CITIES = /toshkent|samarqand|namangan|andijon|farg|buxoro|qashqadaryo|surx
 const EDUCATION_LEVELS = /sinf|litsey|kollej bitir|maktab|bakalavr.*kurs|universitet.*kurs|akademik/i;
 const MONEY = /\$|\d{3,}|ming|dollar|usd|sum/i;
 const TIME = /^\d{1,2}:\d{2}$/;
-const NAME_LIKE = /^[a-zA-ZÀ-žА-яёЎўҚқҒғҲҳ'\- ]{2,50}$/u;
+// Includes Uzbek Latin apostrophes (oʻ gʻ o' o‘ o’ o`) — previously names like "Gʻayrat" were rejected.
+const NAME_LIKE = /^[a-zA-ZÀ-žА-яёЁЎўҚқҒғҲҳ'ʻʼ‘’`\- ]{2,50}$/u;
 
 function validateFieldValue(field: string, value: string): string | null {
   const v = value.trim();
@@ -99,7 +100,7 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
 
   if (text === "/start") {
     await appendMessages(lead, [{ role: "assistant", content: STEPS[0].prompt }]);
-    if (isNewLead) await updateLead(lead.id, { current_step: "full_name" });
+    if (isNewLead) await updateLead(lead.id, { current_step: "current_education" });
     await notifyNewLead(bot, lead);
     return;
   }
@@ -113,7 +114,7 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   if (isNewLead && businessConnectionId) {
     const welcome = STEPS[0].prompt;
     await appendMessages(lead, [{ role: "assistant", content: welcome }]);
-    await updateLead(lead.id, { current_step: "full_name" });
+    await updateLead(lead.id, { current_step: "current_education" });
     await notifyNewLead(bot, lead);
     await bot.telegram.sendMessage(chatId, welcome, {
       business_connection_id: businessConnectionId,
@@ -126,7 +127,8 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   const patch: Partial<Lead> = {};
 
   // Primary: save the current step's field
-  const currentDef = STEPS.find((s) => s.key === lead.current_step);
+  // Derive the step from what's actually filled (fixes leads stuck on old/unused steps)
+  const currentDef = currentStepFor(lead as any);
   if (currentDef?.field && ai.field_value) {
     const validated = validateFieldValue(currentDef.field, ai.field_value);
     if (validated) (patch as any)[currentDef.field] = validated;
@@ -143,9 +145,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     }
   }
 
-  if (ai.advance_step) {
-    patch.current_step = nextStep(lead.current_step).key;
-  }
+  const merged = { ...lead, ...patch };
+  const newStep = currentDef.key === "summary" ? STEPS[STEPS.length - 1] : currentStepFor(merged as any);
+  if (newStep.key !== lead.current_step) patch.current_step = newStep.key;
 
   const updatedLead = { ...lead, ...patch };
 
@@ -158,6 +160,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   } else if (lead.status === "new") {
     patch.status = "in_progress";
   }
+
+  const score = computeLeadScore({ ...lead, ...patch }, isHotLead);
+  if (score !== lead.lead_score) patch.lead_score = score;
 
   if (Object.keys(patch).length > 0) {
     await updateLead(lead.id, patch);
