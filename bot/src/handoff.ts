@@ -5,6 +5,14 @@ import { ALL_FIELDS } from "./steps.js";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID!;
 const BOSS_CHAT_ID = process.env.BOSS_CHAT_ID!;
 
+// All manager chat IDs that receive call-ready alerts
+const CALL_ALERT_IDS: string[] = (() => {
+  const fromEnv = process.env.CALL_ALERT_IDS;
+  if (fromEnv) return fromEnv.split(",").map(s => s.trim()).filter(Boolean);
+  // Fallback: same 5 owners as call-tracker
+  return ["7456490129", "1479721056", "7241691817", "7612390296", "5714684399"];
+})();
+
 const FIELD_EMOJI: Record<string, string> = {
   full_name: "👤", age: "🎂", country: "🌍",
   program: "🎓", semester: "📅", current_education: "🏫",
@@ -154,6 +162,19 @@ async function sendToAll(bot: Telegraf, text: string, lead: Lead) {
   await bot.telegram.sendMessage(BOSS_CHAT_ID, text, opts);
 }
 
+async function sendCallAlert(bot: Telegraf, text: string, lead: Lead) {
+  const opts = { parse_mode: "HTML" as const, reply_markup: openChatBtn(lead) };
+  const sent = new Set<string>([ADMIN_CHAT_ID, BOSS_CHAT_ID]);
+  for (const id of CALL_ALERT_IDS) {
+    if (sent.has(id)) continue;
+    sent.add(id);
+    await bot.telegram.sendMessage(id, text, opts).catch(() => {});
+  }
+  // Always send to ADMIN + BOSS too
+  await bot.telegram.sendMessage(ADMIN_CHAT_ID, text, opts).catch(() => {});
+  await bot.telegram.sendMessage(BOSS_CHAT_ID, text, opts).catch(() => {});
+}
+
 // ── NEW LEAD ────────────────────────────────────────────────────────────────
 export async function notifyNewLead(bot: Telegraf, lead: Lead): Promise<void> {
   const text = [
@@ -200,7 +221,7 @@ export async function notifyLeadUpdate(bot: Telegraf, lead: Lead, newFields: str
   await sendToAll(bot, text + hvBlock(lead), lead);
 }
 
-// ── HOT LEAD ────────────────────────────────────────────────────────────────
+// ── HOT LEAD / CALL READY ───────────────────────────────────────────────────
 export async function notifyHandoff(bot: Telegraf, lead: Lead): Promise<void> {
   const score = leadScore(lead);
   const filled = COLLECTIBLE_FIELDS
@@ -209,27 +230,23 @@ export async function notifyHandoff(bot: Telegraf, lead: Lead): Promise<void> {
     .join("\n");
 
   const text = [
-    "🔥 <b>HOT LEAD</b>",
+    "📞 <b>CALL READY — HOT LEAD</b>",
+    "━━━━━━━━━━━━━━━━━━━━",
     "",
-    `👤 Name: ${lead.full_name ?? "—"}`,
-    `📱 Username: ${usernameStr(lead)}`,
-    `🆔 ID: <code>${lead.telegram_chat_id}</code>`,
-    `🕒 Time: ${timestamp()}`,
+    `👤 ${lead.full_name ?? "—"}`,
+    `📱 ${usernameStr(lead)}`,
+    `🆔 <code>${lead.telegram_chat_id}</code>`,
+    `🕒 ${timestamp()}`,
     "",
+    "─── Profile ───",
     filled || "ℹ️ Ma'lumotlar to'planmoqda",
     "",
-    `📊 Lead Score: ${score}/100`,
+    `📊 Score: ${score}/100`,
     "",
-    "🧠 AI Summary:",
-    "Talaba ariza topshirishga tayyor. Tezkor muloqot tavsiya etiladi.",
-    "",
-    "⚡ Recommended Action:",
-    "Contact within 15 minutes.",
-    "",
-    `Status: 🔥 Hot Lead`,
+    "⚡ <b>Hoziroq bog'laning!</b> (15 daqiqa ichida)",
   ].join("\n");
 
-  await sendToAll(bot, text + hvBlock(lead), lead);
+  await sendCallAlert(bot, text + hvBlock(lead), lead);
 }
 
 // ── QUALIFIED ───────────────────────────────────────────────────────────────
