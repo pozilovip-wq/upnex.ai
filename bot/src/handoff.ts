@@ -164,15 +164,21 @@ async function sendToAll(bot: Telegraf, text: string, lead: Lead) {
 
 async function sendCallAlert(bot: Telegraf, text: string, lead: Lead) {
   const opts = { parse_mode: "HTML" as const, reply_markup: openChatBtn(lead) };
-  const sent = new Set<string>([ADMIN_CHAT_ID, BOSS_CHAT_ID]);
-  for (const id of CALL_ALERT_IDS) {
-    if (sent.has(id)) continue;
-    sent.add(id);
-    await bot.telegram.sendMessage(id, text, opts).catch(() => {});
+  // Collect all recipients, deduplicated
+  const recipients = [...new Set([
+    ADMIN_CHAT_ID,
+    BOSS_CHAT_ID,
+    ...CALL_ALERT_IDS,
+  ].filter(Boolean))];
+
+  for (const id of recipients) {
+    try {
+      await bot.telegram.sendMessage(id, text, opts);
+      console.log(`[handoff] HOT alert sent to ${id} for lead ${lead.telegram_chat_id}`);
+    } catch (err: any) {
+      console.error(`[handoff] Failed to send HOT alert to ${id} for lead ${lead.telegram_chat_id}: ${err?.message ?? err}`);
+    }
   }
-  // Always send to ADMIN + BOSS too
-  await bot.telegram.sendMessage(ADMIN_CHAT_ID, text, opts).catch(() => {});
-  await bot.telegram.sendMessage(BOSS_CHAT_ID, text, opts).catch(() => {});
 }
 
 // ── NEW LEAD ────────────────────────────────────────────────────────────────

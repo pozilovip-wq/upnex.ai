@@ -187,7 +187,9 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
   } as any);
 
-  if (isHotLead) {
+  // Only fire the HOT alert once — skip if already marked handoff before this message
+  const alreadyHandoff = lead.status === "handoff";
+  if (isHotLead && !alreadyHandoff) {
     await notifyHandoff(bot, lead);
   }
 
