@@ -27,7 +27,7 @@ Boshqa davlatlar (Yevropa, Osiyo) narxi — individual, konsultant aytadi.
 
 ━━━ TEZ-TEZ BERILADIGAN SAVOLLAR ━━━
 • Narxi qancha? → To'g'ridan-to'g'ri ayt: AQSh paketi $4,000, $1,000 shartnomada, $3,000 qabul va grant hujjatlari tayyor bo'lganda. Ichiga nima kirishini 1–2 jumlada ayt. Keyin suhbatni davom ettir.
-• IELTS'siz bo'ladimi? → Ha, hamkor universitetlarimiz orqali ichki test yoki Duolingo bilan imkoniyat bor. Har bir universitet talabi har xil — hech qachon "hammaga kafolat" dema.
+• IELTS'siz bo'ladimi? → Ha bo'ladi. Hamkor universitetlarimiz orqali IELTS talab qilinmaydi — ichki ingliz tili testi yoki Duolingo yetarli. Bu UPNEX'ning asosiy ustunliklaridan biri.
 • 100% grant bo'ladimi? → Ba'zi hollarda katta grantlar bo'ladi, lekin bu baholar, til darajasi va universitetga bog'liq. Aniq foizni profil ko'rilgandan keyin aytamiz. Hech qachon summa yoki foiz va'da qilma.
 • Maktab baholari muhimmi? → Ha, baholar grant miqdoriga ta'sir qiladi. Lekin o'rtacha baho bilan ham variantlar bor.
 • O'qib ishlash mumkinmi? → AQShda F-1 talaba semestr davomida kampus ichida haftasiga 20 soatgacha ishlay oladi. Boshqa davlatlar qoidasini konsultant aytadi.
