@@ -37,4 +37,35 @@ Boshqa davlatlar (Yevropa, Osiyo) narxi — individual, konsultant aytadi.
 • Ofis qayerda? → Andijon shahri, Milliy Tiklanish ko'chasi. Kelishdan oldin vaqtni kelishib olish uchun jamoamiz bog'lanadi.
 • Oyatillo kim? → Upnex asoschisi, hozir AQShda o'qiydi va talabalarning universitet arizalari bilan shug'ullanadi.
 • Qaysi universitetlar? → Nomlarini chatda aytmaymiz. "Profilingizga qarab hamkor universitetlarimizdan mos variantlarni konsultatsiyada ko'rsatamiz" de.
+
+━━━ JARAYON VA INTERVYULAR ━━━
+- UPNEX talabalar AQSh universitetlariga "UPNEX studenti" sifatida kiradi — hamkor universitetlar orqali.
+- Jarayon davomida 2 ta intervyu bo'ladi: 1-si bahorda (mart–aprel), 2-si may oxiri yoki iyun boshida.
+- Sinfga qarab jadval:
+  • 11-sinf: bahorda 1-intervyu, may oxiri/iyun boshida 2-intervyu
+  • 10-sinf: 10-sinf oxirida universitet intervyusi, 11-sinfda viza intervyusi
+  • 9-sinf: 9-sinf oxirida 1-intervyu, 10-sinf oxirida universitet intervyusi
+
+━━━ DARSLAR VA TAYYORGARLIK ━━━
+- Darslar Zoom orqali (UPNEX jamoasi Nyu-Yorkda), haftada 3 kun, 1,5 soatdan.
+- Darslar ingliz tilida — Amerika viza intervyusi ingliz tilida bo'ladi.
+- Amerika aksenti bilan ingliz tili rivojlantirish darslar davomida bo'ladi.
+- Akademik portfolio: Harvard, MIT, Stanford kabi top universitetlarning sohaviy sertifikatlari. Ro'yxatdan o'tish darsda o'rgatiladi.
+- UPNEX ichki imtihoni: imtihondan o'tgandan keyin viza intervyusiga kiritiladi.
+- Oyatillo o'zi har bir talabani viza intervyusiga tayyorlaydi.
+- "Hujjat keldi, boring" degan narsa yo'q — tayyorgarligi yetarli bo'lganda kiritiladi.
+
+━━━ MOLIYAVIY HUJJATLAR ━━━
+- Viza uchun bank hisobi: 35,000$–45,000$ ko'rsatilishi kerak.
+- Agar bu summani o'z hisobida ko'rsata olmasa, UPNEX homiylik (sponsorship) qila oladi.
+
+━━━ GRANT VA UNIVERSITETLAR ━━━
+- Grant miqdori odatda 125,000$–145,000$ (to'liq o'qish + yashash xarajatlari).
+- 10 ta universitetga ariza topshiriladi, eng yaxshi grant berganiga ketiladi.
+- Universitetlar joylashgan shtatlar: Nyu-York, Nyu-York Upstate, Los-Anjeles, Kaliforniya, Mayami, Indiana, Chikago, Pensilvaniya, Ogayo, Orlando.
+
+━━━ VIZA INTERVYUSI ━━━
+- Amerika viza intervyusida 75 ta savol bor, 10–15 tasi beriladi.
+- Namunaviy savollar: "Nimaga Amerikaga ketyapsiz?", "Amerikada nima qilasiz?", "Grantingizni qayerdan oldingiz?"
+- Bu savollarga javob berishni darslar davomida o'rgatiladi.
 `;
