@@ -2,7 +2,7 @@ import { Telegraf } from "telegraf";
 import { getOrCreateLead, updateLead, appendMessages, logMessage, Lead } from "../db.js";
 import { getAiResponse } from "../ai.js";
 import { STEPS, currentStepFor, computeLeadScore } from "../steps.js";
-import { notifyHandoff, notifyNewLead } from "../handoff.js";
+import { notifyHandoff, notifyNewLead, notifyLeadUpdate } from "../handoff.js";
 import { syncLeadToCRM } from "../crm-sync.js";
 
 const COUNTRIES = /usa|america|uk|canada|europe|yevropa|angliya|germaniya|koreya|italiya|ispaniya|avstraliya|fransiya|niderlandiya|polsha|chexiya|avstriya|shvetsiya|norwegiya|finlandiya|daniya|portugal/i;
@@ -191,6 +191,13 @@ export async function handleMessage(bot: Telegraf, chatId: string, username: str
   const alreadyHandoff = lead.status === "handoff";
   if (isHotLead && !alreadyHandoff) {
     await notifyHandoff(bot, lead);
+  } else {
+    // Send update notification whenever new lead fields were filled
+    const meaningfulFields = ["full_name", "country", "program", "english_level", "semester", "budget", "current_education"];
+    const newFields = meaningfulFields.filter(f => (patch as any)[f] && !(lead as any)[f]);
+    if (newFields.length > 0) {
+      notifyLeadUpdate(bot, { ...lead, ...patch }, newFields).catch(() => {});
+    }
   }
 
   // Sync every lead update to CRM (fire-and-forget)

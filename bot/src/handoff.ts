@@ -72,6 +72,13 @@ function statusLine(status: string): string {
   return map[status] ?? "🟡 In Progress";
 }
 
+function tempLabel(lead: Lead): string {
+  const score = leadScore(lead);
+  if (lead.status === "handoff" || score >= 70) return "🔥 HOT";
+  if (score >= 35 || (lead.country && lead.program)) return "🌡 WARM";
+  return "❄️ COLD";
+}
+
 function usernameStr(lead: Lead): string {
   return lead.telegram_username ? `@${lead.telegram_username}` : "—";
 }
@@ -184,7 +191,7 @@ async function sendCallAlert(bot: Telegraf, text: string, lead: Lead) {
 // ── NEW LEAD ────────────────────────────────────────────────────────────────
 export async function notifyNewLead(bot: Telegraf, lead: Lead): Promise<void> {
   const text = [
-    "🆕 <b>NEW LEAD</b>",
+    `🆕 <b>NEW LEAD</b> — ${tempLabel(lead)}`,
     "",
     `👤 Name: ${lead.full_name ?? "—"}`,
     `📱 Username: ${usernameStr(lead)}`,
@@ -210,7 +217,7 @@ export async function notifyLeadUpdate(bot: Telegraf, lead: Lead, newFields: str
     .map((f) => `${FIELD_EMOJI[f] ?? "•"} ${FIELD_LABEL[f] ?? f}: ${(lead as any)[f]}`);
 
   const text = [
-    "✅ <b>Lead Updated</b>",
+    `✅ <b>Lead Updated</b> — ${tempLabel(lead)}`,
     "",
     `👤 Name: ${lead.full_name ?? "—"}`,
     `📱 Username: ${usernameStr(lead)}`,
